@@ -1,0 +1,69 @@
+---
+description: 前端frontend/代码修改规则
+alwaysApply: false
+enabled: true
+updatedAt: 2026-01-10T21:46:40.606Z
+provider: 
+---
+
+前端规则
+
+### 3.1 技术栈
+- **框架**：React 18
+- **构建工具**：Vite
+- **状态管理**：Zustand（轻量级、易用）
+- **路由**：React Router v6
+- **UI库**：Ant Design（组件丰富、美观）
+- **API请求**：Axios
+- **样式**：TailwindCSS（快速开发、响应式）
+- **类型检查**：TypeScript 5
+
+### 3.2 目录结构
+```
+frontend/
+├── src/
+│   ├── components/  # 可复用组件
+│   ├── pages/       # 页面组件
+│   ├── store/       # 状态管理
+│   ├── services/    # API调用
+│   ├── hooks/       # 自定义Hooks
+│   ├── utils/       # 工具函数
+│   ├── types/       # TypeScript类型定义
+│   ├── styles/      # 全局样式
+│   ├── App.tsx      # 应用入口组件
+│   └── main.tsx     # 应用入口文件
+├── public/          # 静态资源
+├── index.html       # HTML模板
+├── vite.config.ts   # Vite配置
+├── tsconfig.json    # TypeScript配置
+├── package.json     # 依赖管理
+└── tailwind.config.js # TailwindCSS配置
+```
+
+### 3.3 代码规范
+- TypeScript严格模式
+- 使用ESLint + Prettier进行代码格式化
+- 组件命名采用PascalCase
+- 函数组件优先
+- 清晰的props和state类型定义
+- 变量命名使用驼峰命名法
+- 常量使用全大写加下划线
+
+### 3.4 组件设计
+- 组件化开发，高内聚低耦合
+- 容器组件与展示组件分离
+- 组件props使用接口定义
+- 合理使用React Hooks
+- 避免不必要的重渲染
+
+### 3.5 状态管理
+- 使用Zustand进行状态管理
+- 状态按功能模块划分
+- 避免全局状态过多
+- 异步操作处理清晰
+
+### 3.6 API调用
+- 统一的API请求封装
+- 错误处理统一
+- 请求状态管理
+- 超时处理
