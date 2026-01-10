@@ -1,0 +1,67 @@
+---
+description: 后端backend/目录代码修改规则
+alwaysApply: false
+enabled: true
+updatedAt: 2026-01-10T21:45:46.265Z
+provider: 
+---
+
+后端规则（Go）
+
+### 2.1 技术栈
+- **Web框架**：Gin（高性能、轻量级）
+- **ORM**：GORM（强大的数据库操作能力）
+- **认证**：JWT（JSON Web Token）
+- **数据库**：PostgreSQL（支持复杂数据结构）
+- **日志**：zap（结构化日志）
+- **配置管理**：viper
+
+### 2.2 目录结构
+```
+backend/
+├── api/             # 接口层：HTTP路由和控制器
+│   ├── v1/          # API版本控制
+│   └── middleware/  # 中间件
+├── application/     # 应用层：协调领域对象完成业务逻辑
+│   ├── commands/    # 命令处理
+│   └── queries/     # 查询处理
+├── domain/          # 领域层：核心业务逻辑
+│   └── domain_name/ # 具体业务领域名称
+├── infrastructure/  # 基础设施层：技术支持
+│   ├── database/    # 数据库访问
+│   ├── cache/       # 缓存
+│   ├── config/      # 配置管理
+│   └── utils/       # 工具函数
+├── docs/            # API文档
+├── main.go          # 应用入口
+├── go.mod           # 依赖管理
+└── .env.example     # 环境变量示例
+```
+
+### 2.3 代码规范
+- 遵循Go官方代码规范（使用`gofmt`和`golint`）
+- 函数注释清晰，包含参数和返回值说明
+- 错误处理统一，使用自定义错误类型
+- 日志采用结构化日志
+- 变量命名使用驼峰命名法
+- 常量使用全大写加下划线
+
+### 2.4 API设计
+- RESTful风格API
+- 版本控制（如`/v1/`）
+- 统一的响应格式
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {}
+}
+```
+- 完善的错误码体系
+
+### 2.5 数据库设计
+- 采用PostgreSQL数据库
+- 表名使用复数形式，下划线分隔
+- 字段名使用下划线分隔
+- 每个表必须包含`id`、`created_at`、`updated_at`字段
+- 外键约束明确
