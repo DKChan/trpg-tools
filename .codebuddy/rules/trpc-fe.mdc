@@ -67,3 +67,15 @@ frontend/
 - 错误处理统一
 - 请求状态管理
 - 超时处理
+
+### 3.7 代码查找规范
+- **优先使用 MCP serena 工具进行符号查找**：
+  - 查找函数/类/变量定义：使用 `find_symbol` 工具
+  - 查找符号引用：使用 `find_referencing_symbols` 工具
+  - 获取文件符号概览：使用 `get_symbols_overview` 工具
+  - 代码模式搜索：使用 `search_for_pattern` 工具
+- 仅在以下情况使用 `search_content` 或 `read_file`：
+  - 查找配置文件、文档文件等非代码文件
+  - 查找字符串字面量或注释
+  - MCP serena 工具无法使用时
+- MCP serena 工具提供精确的语义级查找，比文本搜索更准确高效
