@@ -1,21 +1,19 @@
-import { Card, Descriptions, Button, List, Avatar, message, Spin } from 'antd'
-import { ArrowLeftOutlined, UserOutlined } from '@ant-design/icons'
+import { Card, Descriptions, Button, message, Spin } from 'antd'
+import { ArrowLeftOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { roomService } from '../services'
-import { useAuthStore } from '../store/authStore'
+import { roomService, characterService } from '../services'
 
 function RoomDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
   const [room, setRoom] = useState<any>(null)
-  const [members, setMembers] = useState<any[]>([])
+  const [characters, setCharacters] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const { user } = useAuthStore()
 
   useEffect(() => {
     fetchRoomDetail()
-    fetchRoomMembers()
+    fetchCharacters()
   }, [id])
 
   const fetchRoomDetail = async () => {
@@ -31,33 +29,18 @@ function RoomDetail() {
     }
   }
 
-  const fetchRoomMembers = async () => {
+  const fetchCharacters = async () => {
     try {
-      setLoading(true)
-      const response = await roomService.getRoomMembers(Number(id))
+      const response = await characterService.getCharacters(Number(id))
       if (response.data.code === 200) {
-        setMembers(response.data.data)
+        setCharacters(response.data.data)
       } else {
-        message.error('获取房间成员失败')
+        message.error('获取人物卡失败')
       }
     } catch (error) {
-      message.error('获取房间成员失败')
+      message.error('获取人物卡失败')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleLeaveRoom = async () => {
-    try {
-      const response = await roomService.leaveRoom(Number(id))
-      if (response.data.code === 200) {
-        message.success('已退出房间')
-        navigate('/')
-      } else {
-        message.error('退出房间失败')
-      }
-    } catch (error) {
-      message.error('退出房间失败')
     }
   }
 
@@ -75,6 +58,10 @@ function RoomDetail() {
     }
   }
 
+  const handleCreateCharacter = () => {
+    navigate(`/rooms/${id}/characters/new`)
+  }
+
   if (loading) {
     return <Spin size="large" className="flex justify-center items-center h-64" />
   }
@@ -82,8 +69,6 @@ function RoomDetail() {
   if (!room) {
     return <div>房间不存在</div>
   }
-
-  const isDM = user?.id === room.dmid
 
   return (
     <div>
@@ -99,39 +84,42 @@ function RoomDetail() {
         <Descriptions title="房间信息" bordered column={2}>
           <Descriptions.Item label="房间名称">{room.name}</Descriptions.Item>
           <Descriptions.Item label="规则系统">{room.rule_system}</Descriptions.Item>
-          <Descriptions.Item label="DM">{room.dm?.nickname || '未知'}</Descriptions.Item>
-          <Descriptions.Item label="当前人数">{members.length}/{room.max_players}</Descriptions.Item>
-          <Descriptions.Item label="邀请码">{room.invite_code}</Descriptions.Item>
+          <Descriptions.Item label="人物卡数量">{characters.length}</Descriptions.Item>
           <Descriptions.Item label="房间描述" span={2}>
             {room.description || '暂无描述'}
           </Descriptions.Item>
         </Descriptions>
+        <div className="mt-4">
+          <Button type="primary" onClick={handleCreateCharacter} className="mr-2">
+            创建人物卡
+          </Button>
+          <Button danger onClick={handleDeleteRoom}>
+            删除房间
+          </Button>
+        </div>
       </Card>
 
-      <Card
-        title="房间成员"
-        extra={
-          isDM ? (
-            <Button danger onClick={handleDeleteRoom}>
-              删除房间
-            </Button>
-          ) : (
-            <Button onClick={handleLeaveRoom}>离开房间</Button>
-          )
-        }
-      >
-        <List
-          dataSource={members}
-          renderItem={(member: any) => (
-            <List.Item>
-              <List.Item.Meta
-                avatar={<Avatar icon={<UserOutlined />} />}
-                title={member.user?.nickname || '未知用户'}
-                description={member.role === 'dm' ? 'DM' : '玩家'}
-              />
-            </List.Item>
-          )}
-        />
+      <Card title="人物卡列表">
+        {characters.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">暂无人物卡</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {characters.map((char) => (
+              <Card
+                key={char.id}
+                hoverable
+                onClick={() => navigate(`/rooms/${id}/characters/${char.id}`)}
+              >
+                <h3 className="font-bold mb-2">{char.name}</h3>
+                <div className="text-sm text-gray-600">
+                  <p>种族: {char.race || '-'}</p>
+                  <p>职业: {char.class || '-'}</p>
+                  <p>等级: {char.level || 1}</p>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   )

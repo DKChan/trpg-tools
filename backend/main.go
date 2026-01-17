@@ -6,6 +6,8 @@ import (
 	"trpg-sync/backend/infrastructure/database"
 	"trpg-sync/backend/api/v1"
 	"trpg-sync/backend/api/middleware"
+	"trpg-sync/backend/domain/room"
+	"trpg-sync/backend/domain/character"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,6 +20,11 @@ func main() {
 	db, err := database.InitDB(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
+	}
+
+	// 自动同步表结构
+	if err := db.AutoMigrate(&room.Room{}, &character.CharacterCard{}); err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
 	r := gin.Default()

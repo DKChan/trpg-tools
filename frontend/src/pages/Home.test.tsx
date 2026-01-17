@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import Home from './Home'
@@ -13,19 +13,16 @@ vi.mock('../services', () => ({
   },
 }))
 
-// Mock antd Modal
+// Mock antd message
 vi.mock('antd', async () => ({
   ...(await vi.importActual('antd')),
-  Modal: {
-    confirm: vi.fn(),
-  },
   message: {
     success: vi.fn(),
     error: vi.fn(),
   },
 }))
 
-import { Modal, message } from 'antd'
+import { message } from 'antd'
 
 describe('Home Page', () => {
   beforeEach(() => {
@@ -59,13 +56,13 @@ describe('Home Page', () => {
         id: 1,
         name: 'Test Room 1',
         description: 'Description 1',
-        is_public: true,
+        rule_system: 'DND5e',
       },
       {
         id: 2,
         name: 'Test Room 2',
         description: 'Description 2',
-        is_public: true,
+        rule_system: 'DND5e',
       },
     ]
 
@@ -85,23 +82,6 @@ describe('Home Page', () => {
 
     await waitFor(() => {
       expect(roomService.getRooms).toHaveBeenCalled()
-    })
-  })
-
-  it('打开创建房间 Modal', async () => {
-    const user = userEvent.setup()
-    render(
-      <BrowserRouter>
-        <Home />
-      </BrowserRouter>
-    )
-
-    const createButton = screen.getByRole('button', { name: /创建房间/i })
-    await user.click(createButton)
-
-    // 验证 Modal confirm 被调用
-    await waitFor(() => {
-      expect(Modal.confirm).toHaveBeenCalled()
     })
   })
 
@@ -126,8 +106,6 @@ describe('Home Page', () => {
       </BrowserRouter>
     )
 
-    // 模拟 Modal confirm 的 onOk 回调
-    // 注意：实际的 Modal.confirm 交互可能需要更复杂的设置
     expect(message.success).toBeDefined()
   })
 
@@ -142,7 +120,7 @@ describe('Home Page', () => {
     const searchInput = screen.getByPlaceholderText('搜索房间')
     await user.type(searchInput, 'Test Room')
 
-    // 验证搜索输入
     expect(searchInput).toHaveValue('Test Room')
   })
 })
+

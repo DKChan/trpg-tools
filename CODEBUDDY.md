@@ -2,9 +2,9 @@
 
 ## 项目概述
 
-TRPG人物卡共享平台 - 支持DM和玩家在线管理和共享人物卡信息，实现实时同步的桌面角色扮演游戏平台。
+TRPG个人人物卡管理工具 - 专为TRPG玩家设计的单机人物卡管理应用，支持多规则系统的人物卡创建和管理。
 
-- **后端**: Go 1.24+ | Gin | GORM | PostgreSQL | JWT
+- **后端**: Go 1.24+ | Gin | GORM | SQLite
 - **前端**: React 18 | TypeScript 5 | Vite | Zustand | Ant Design | TailwindCSS
 
 ## 常用命令
@@ -59,36 +59,24 @@ npm run lint
 backend/
 ├── api/              # 接口层 - HTTP路由和控制器
 │   ├── v1/          # API v1版本路由和处理器
-│   │   ├── handlers/ # 请求处理器 (AuthHandler, UserHandler, RoomHandler, CharacterHandler)
+│   │   ├── handlers/ # 请求处理器 (RoomHandler, CharacterHandler)
 │   │   └── routes.go # 路由注册
-│   ├── middleware/   # 中间件 (Auth, CORS, Logger, Recovery)
-│   └── router.go    # 路由配置（备用，当前使用 v1/routes.go）
-├── application/      # 应用层 - 业务用例编排（待实现）
-│   ├── commands/    # 命令处理（写操作）
-│   └── queries/     # 查询处理（读操作）
+│   └── middleware/   # 中间件 (CORS, Logger, Recovery)
 ├── domain/          # 领域层 - 核心业务逻辑和实体
-│   ├── aggregate/   # 聚合根（待实现）
 │   ├── character/   # 人物卡领域 (CharacterCard)
-│   ├── entity/      # 基础实体（待实现）
-│   ├── repository/  # 仓储接口定义（待实现）
-│   ├── room/        # 房间领域 (Room, RoomMember)
-│   ├── service/     # 领域服务（待实现）
-│   ├── user/        # 用户领域 (User)
-│   └── vo/          # 值对象（待实现）
+│   └── room/        # 房间领域 (Room)
 ├── infrastructure/  # 基础设施层 - 技术实现
-│   ├── cache/       # 缓存（待实现）
 │   ├── config/      # 配置管理
-│   ├── database/    # 数据库连接 (InitDB)
-│   └── utils/       # 工具函数（待实现）
+│   └── database/    # 数据库连接 (InitDB)
 └── main.go          # 应用入口
 ```
 
 **核心设计原则**：
-- **依赖方向**: application → domain; infrastructure → domain（domain层不依赖任何外层）
+- **依赖方向**: api → domain; infrastructure → domain（domain层不依赖任何外层）
 - **实体定义**: 领域实体在 `domain/*/` 包中，使用 GORM 标签
-- **API层**: handlers 通过 GORM DB 直接操作实体（当前实现），后续应引入 repository 模式
-- **中间件链**: CORS → Logger → Recovery → Auth（按需）
-- **JWT认证**: 通过 `AuthMiddleware` 验证 Token，解析用户信息存入 context
+- **API层**: handlers 通过 GORM DB 直接操作实体
+- **中间件链**: CORS → Logger → Recovery
+- **单机应用**: 使用SQLite数据库，无需认证
 
 ### 前端架构
 
@@ -96,12 +84,12 @@ backend/
 frontend/
 ├── src/
 │   ├── components/  # 可复用组件 (Layout等)
-│   ├── pages/       # 页面组件 (Login, Register, Home, Room, RoomDetail, CharacterCard)
-│   ├── store/       # Zustand状态管理 (authStore)
+│   ├── pages/       # 页面组件 (Home, Room, RoomDetail, CharacterCard)
+│   ├── store/       # Zustand状态管理 (roomStore, characterStore)
 │   ├── services/    # API封装 (api.ts统一实例, index.ts具体接口)
 │   ├── hooks/       # 自定义Hooks（待实现）
 │   ├── utils/       # 工具函数（待实现）
-│   ├── types/       # TypeScript类型 (User, Room, CharacterCard, ApiResponse)
+│   ├── types/       # TypeScript类型 (Room, CharacterCard, ApiResponse)
 │   ├── styles/      # 全局样式 (TailwindCSS)
 │   ├── App.tsx      # 应用根组件
 │   └── main.tsx     # 应用入口
@@ -111,20 +99,18 @@ frontend/
 ```
 
 **核心设计原则**：
-- **状态管理**: Zustand + persist中间件，状态按功能模块划分
-- **API客户端**: Axios实例统一拦截器处理 JWT 和 401 错误
-- **路由守卫**: 在组件中通过 `useAuthStore` 检查登录状态
-- **组件设计**: 函数组件优先，props使用接口定义，避免不必要的重渲染
+- **状态管理**: Zustand + persist中间件，本地存储数据
+- **API客户端**: Axios实例统一处理请求
+- **组件设计**: 函数组件优先，props使用接口定义
 - **样式策略**: Ant Design组件库 + TailwindCSS工具类
+- **单机应用**: 无认证，直接使用API
 
 ## 数据模型
 
 ### 核心实体 (domain/)
 
-- **User**: 用户信息 (ID, Email, Password, Nickname, Avatar)
-- **Room**: 房间信息 (ID, Name, Description, RuleSystem, Password, InviteCode, DMID, MaxPlayers, IsPublic)
-- **RoomMember**: 房间成员关系 (ID, RoomID, UserID, Role: 'dm'|'player')
-- **CharacterCard**: 人物卡 (ID, UserID, RoomID, 属性/技能/装备等DND5e字段)
+- **Room**: 房间信息 (ID, Name, Description, RuleSystem)
+- **CharacterCard**: 人物卡 (ID, RoomID, 属性/技能/装备等DND5e字段)
 
 ### 表命名规范
 
@@ -137,9 +123,7 @@ frontend/
 ### RESTful风格
 
 - 版本前缀：`/api/v1/`
-- 认证路由：`POST /api/v1/auth/login`, `POST /api/v1/auth/register`
-- 用户路由：`GET/PUT /api/v1/user/profile`, `PUT /api/v1/user/password`
-- 房间路由：`GET/POST /api/v1/rooms`, `GET/PUT/DELETE /api/v1/rooms/:id`, `POST /api/v1/rooms/:id/join`
+- 房间路由：`GET/POST /api/v1/rooms`, `GET/PUT/DELETE /api/v1/rooms/:id`
 - 人物卡路由：`GET/POST /api/v1/rooms/:roomId/characters`, `GET/PUT/DELETE /api/v1/rooms/:roomId/characters/:id`
 
 ### 响应格式
@@ -152,29 +136,27 @@ frontend/
 }
 ```
 
-### 认证机制
+### 数据存储
 
-- JWT Token 存储在 Zustand persist store
-- Axios请求拦截器自动添加 `Authorization: Bearer {token}`
-- 401响应时自动登出并跳转登录页
+- 使用SQLite本地数据库
+- 数据文件为 `sqlite.db`
+- GORM自动管理表结构
 
 ## 关键开发注意事项
 
 ### 后端开发
 
 1. **新增API端点**: 在 `api/v1/handlers/` 创建handler，在 `api/v1/routes.go` 注册路由
-2. **数据库迁移**: 如修改实体结构，AutoMigrate会自动更新表结构（开发环境）
-3. **认证保护**: 在路由组上添加 `room.Use(AuthMiddleware())`
-4. **错误处理**: 统一使用gin.JSON返回错误，避免直接暴露内部错误
-5. **Context传递**: 从gin.Context获取当前用户ID: `userID := c.GetUint("user_id")`
+2. **数据库迁移**: 如修改实体结构，AutoMigrate会自动更新表结构
+3. **错误处理**: 统一使用gin.JSON返回错误，避免直接暴露内部错误
+4. **SQLite使用**: 所有数据存储在本地sqlite.db文件
 
 ### 前端开发
 
 1. **新增页面**: 在 `pages/` 创建组件，在 `App.tsx` 添加路由
 2. **API调用**: 在 `services/index.ts` 定义接口函数，使用 `api.ts` 的axios实例
-3. **状态管理**: 在 `store/` 创建Zustand store，使用persist中间件持久化
+3. **状态管理**: 在 `store/` 创建Zustand store，使用persist中间件本地持久化
 4. **类型定义**: 在 `types/index.ts` 添加接口，保持前后端类型一致
-5. **认证检查**: 使用 `useAuthStore.getState().token` 判断登录状态
 
 ## 环境配置
 

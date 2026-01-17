@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { authService, userService, roomService, characterService } from './index'
+import { roomService, characterService } from './index'
 import api from './api'
 
 // Mock api
@@ -11,69 +11,6 @@ vi.mock('./api', () => ({
     delete: vi.fn(),
   },
 }))
-
-describe('Auth Service', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('register 调用正确的 API', () => {
-    const mockData = {
-      email: 'test@example.com',
-      password: 'password123',
-      nickname: 'Test User',
-    }
-
-    authService.register(mockData)
-
-    expect(api.post).toHaveBeenCalledWith('/auth/register', mockData)
-  })
-
-  it('login 调用正确的 API', () => {
-    const mockData = {
-      email: 'test@example.com',
-      password: 'password123',
-    }
-
-    authService.login(mockData)
-
-    expect(api.post).toHaveBeenCalledWith('/auth/login', mockData)
-  })
-})
-
-describe('User Service', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('getProfile 调用正确的 API', () => {
-    userService.getProfile()
-
-    expect(api.get).toHaveBeenCalledWith('/user/profile')
-  })
-
-  it('updateProfile 调用正确的 API', () => {
-    const mockData = {
-      nickname: 'Updated Name',
-      avatar: 'https://example.com/avatar.png',
-    }
-
-    userService.updateProfile(mockData)
-
-    expect(api.put).toHaveBeenCalledWith('/user/profile', mockData)
-  })
-
-  it('updatePassword 调用正确的 API', () => {
-    const mockData = {
-      old_password: 'oldpassword',
-      new_password: 'newpassword123',
-    }
-
-    userService.updatePassword(mockData)
-
-    expect(api.put).toHaveBeenCalledWith('/user/password', mockData)
-  })
-})
 
 describe('Room Service', () => {
   beforeEach(() => {
@@ -97,27 +34,12 @@ describe('Room Service', () => {
     const mockData = {
       name: 'Test Room',
       description: 'Test description',
-      max_players: 5,
-      is_public: true,
+      rule_system: 'DND5e',
     }
 
     roomService.createRoom(mockData)
 
     expect(api.post).toHaveBeenCalledWith('/rooms', mockData)
-  })
-
-  it('joinRoom 调用正确的 API', () => {
-    const roomId = 1
-    roomService.joinRoom(roomId)
-
-    expect(api.post).toHaveBeenCalledWith(`/rooms/${roomId}/join`)
-  })
-
-  it('leaveRoom 调用正确的 API', () => {
-    const roomId = 1
-    roomService.leaveRoom(roomId)
-
-    expect(api.post).toHaveBeenCalledWith(`/rooms/${roomId}/leave`)
   })
 
   it('deleteRoom 调用正确的 API', () => {

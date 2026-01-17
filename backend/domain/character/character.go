@@ -6,7 +6,6 @@ import (
 
 type CharacterCard struct {
 	ID           uint      `gorm:"primaryKey"`
-	UserID       uint      `gorm:"not null"`
 	RoomID       uint      `gorm:"not null"`
 	Name         string    `gorm:"not null"`
 	Race         string

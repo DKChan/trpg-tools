@@ -1,12 +1,33 @@
-import { useState } from 'react'
-import { Card, Row, Col, Button, Input, Modal, Form, message } from 'antd'
+import { useState, useEffect } from 'react'
+import { Card, Row, Col, Button, Input, Modal, Form, message, Spin } from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import { roomService } from '../services'
 
 function Home() {
+  const navigate = useNavigate()
   const [rooms, setRooms] = useState<any[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
+
+  useEffect(() => {
+    fetchRooms()
+  }, [])
+
+  const fetchRooms = async () => {
+    try {
+      setLoading(true)
+      const response = await roomService.getRooms()
+      if (response.data.code === 200) {
+        setRooms(response.data.data)
+      }
+    } catch (error) {
+      message.error('获取房间列表失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleCreateRoom = async (values: any) => {
     try {
@@ -15,10 +36,15 @@ function Home() {
         message.success('房间创建成功')
         setIsModalOpen(false)
         form.resetFields()
+        fetchRooms()
       }
     } catch (error) {
       message.error('房间创建失败')
     }
+  }
+
+  if (loading) {
+    return <Spin size="large" className="flex justify-center items-center h-64" />
   }
 
   return (
@@ -41,20 +67,19 @@ function Home() {
       />
 
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card
-            title="示例房间"
-            extra={<span className="text-sm text-gray-500">DND5e</span>}
-            hoverable
-            className="h-full"
-          >
-            <p className="text-gray-600 mb-4">这是一个示例房间</p>
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>DM: 示例用户</span>
-              <span>3/10 人</span>
-            </div>
-          </Card>
-        </Col>
+        {rooms.map((room) => (
+          <Col xs={24} sm={12} md={8} lg={6} key={room.id}>
+            <Card
+              title={room.name}
+              extra={<span className="text-sm text-gray-500">{room.rule_system}</span>}
+              hoverable
+              className="h-full"
+              onClick={() => navigate(`/rooms/${room.id}`)}
+            >
+              <p className="text-gray-600 mb-4">{room.description || '暂无描述'}</p>
+            </Card>
+          </Col>
+        ))}
       </Row>
 
       <Modal
@@ -92,3 +117,4 @@ function Home() {
 }
 
 export default Home
+

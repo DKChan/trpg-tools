@@ -1,23 +1,5 @@
 import api from './api'
-import { ApiResponse, User } from '../types'
-
-export const authService = {
-  register: (data: { email: string; password: string; nickname: string }) =>
-    api.post<ApiResponse<User>>('/auth/register', data),
-
-  login: (data: { email: string; password: string }) =>
-    api.post<ApiResponse<User>>('/auth/login', data),
-}
-
-export const userService = {
-  getProfile: () => api.get<ApiResponse<User>>('/user/profile'),
-
-  updateProfile: (data: { nickname?: string; avatar?: string }) =>
-    api.put<ApiResponse<null>>('/user/profile', data),
-
-  updatePassword: (data: { old_password: string; new_password: string }) =>
-    api.put<ApiResponse<null>>('/user/password', data),
-}
+import { ApiResponse } from '../types'
 
 export const roomService = {
   getRooms: () => api.get<ApiResponse<any[]>>('/rooms'),
@@ -28,24 +10,9 @@ export const roomService = {
     name: string
     description?: string
     rule_system?: string
-    password?: string
-    max_players?: number
-    is_public?: boolean
   }) => api.post<ApiResponse<any>>('/rooms', data),
 
-  joinRoom: (id: number) => api.post<ApiResponse<null>>(`/rooms/${id}/join`),
-
-  leaveRoom: (id: number) => api.post<ApiResponse<null>>(`/rooms/${id}/leave`),
-
   deleteRoom: (id: number) => api.delete<ApiResponse<null>>(`/rooms/${id}`),
-
-  getRoomMembers: (id: number) => api.get<ApiResponse<any[]>>(`/rooms/${id}/members`),
-
-  kickMember: (id: number, userId: number) =>
-    api.put<ApiResponse<null>>(`/rooms/${id}/members/${userId}/kick`),
-
-  transferDM: (id: number, userId: number) =>
-    api.put<ApiResponse<null>>(`/rooms/${id}/transfer-dm`, { user_id: userId }),
 }
 
 export const characterService = {

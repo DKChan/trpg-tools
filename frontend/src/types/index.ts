@@ -1,26 +1,14 @@
-export interface User {
-  user_id: number
-  email: string
-  nickname: string
-  avatar?: string
-}
-
 export interface Room {
   id: number
   name: string
   description: string
   rule_system: string
-  invite_code: string
-  dm_id: number
-  max_players: number
-  is_public: boolean
   created_at: string
   updated_at: string
 }
 
 export interface CharacterCard {
   id: number
-  user_id: number
   room_id: number
   name: string
   race: string

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 	"trpg-sync/backend/domain/character"
-	"trpg-sync/backend/domain/room"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -34,44 +33,12 @@ type CreateCharacterRequest struct {
 }
 
 func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"code":    401,
-			"message": "Unauthorized",
-			"data":    nil,
-		})
-		return
-	}
-
 	roomIDStr := c.Param("roomId")
 	roomID, err := strconv.ParseUint(roomIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"code":    400,
 			"message": "Invalid room ID",
-			"data":    nil,
-		})
-		return
-	}
-
-	// 验证房间是否存在
-	var roomExists bool
-	if err := h.db.Model(&room.Room{}).Select("count(*) > 0").Where("id = ?", roomID).Find(&roomExists).Error; err != nil || !roomExists {
-		c.JSON(http.StatusNotFound, gin.H{
-			"code":    404,
-			"message": "Room not found",
-			"data":    nil,
-		})
-		return
-	}
-
-	// 验证用户是否在房间中
-	var memberExists bool
-	if err := h.db.Model(&room.RoomMember{}).Select("count(*) > 0").Where("room_id = ? AND user_id = ?", roomID, userID).Find(&memberExists).Error; err != nil || !memberExists {
-		c.JSON(http.StatusForbidden, gin.H{
-			"code":    403,
-			"message": "You are not a member of this room",
 			"data":    nil,
 		})
 		return
@@ -88,7 +55,6 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 	}
 
 	newCharacter := character.CharacterCard{
-		UserID:       userID.(uint),
 		RoomID:       uint(roomID),
 		Name:         req.Name,
 		Race:         req.Race,
@@ -161,19 +127,8 @@ func (h *CharacterHandler) GetCharacter(c *gin.Context) {
 }
 
 func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"code":    401,
-			"message": "Unauthorized",
-			"data":    nil,
-		})
-		return
-	}
-
 	characterIDStr := c.Param("id")
 
-	// 获取要更新的人物卡
 	var targetCharacter character.CharacterCard
 	if err := h.db.First(&targetCharacter, characterIDStr).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -184,17 +139,6 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 		return
 	}
 
-	// 验证所有权
-	if targetCharacter.UserID != userID.(uint) {
-		c.JSON(http.StatusForbidden, gin.H{
-			"code":    403,
-			"message": "Only character owner can update",
-			"data":    nil,
-		})
-		return
-	}
-
-	// 解析请求体
 	var req CreateCharacterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -205,7 +149,6 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 		return
 	}
 
-	// 更新字段
 	targetCharacter.Name = req.Name
 	targetCharacter.Race = req.Race
 	targetCharacter.Class = req.Class
@@ -236,19 +179,8 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 }
 
 func (h *CharacterHandler) DeleteCharacter(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"code":    401,
-			"message": "Unauthorized",
-			"data":    nil,
-		})
-		return
-	}
-
 	characterIDStr := c.Param("id")
 
-	// 获取要删除的人物卡
 	var targetCharacter character.CharacterCard
 	if err := h.db.First(&targetCharacter, characterIDStr).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -259,17 +191,6 @@ func (h *CharacterHandler) DeleteCharacter(c *gin.Context) {
 		return
 	}
 
-	// 验证所有权
-	if targetCharacter.UserID != userID.(uint) {
-		c.JSON(http.StatusForbidden, gin.H{
-			"code":    403,
-			"message": "Only character owner can delete",
-			"data":    nil,
-		})
-		return
-	}
-
-	// 删除人物卡
 	if err := h.db.Delete(&targetCharacter).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    500,

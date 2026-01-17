@@ -8,11 +8,10 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
+	Server ServerConfig
 	Database DatabaseConfig
-	JWT      JWTConfig
-	CORS     CORSConfig
-	Log      LogConfig
+	CORS    CORSConfig
+	Log     LogConfig
 }
 
 type ServerConfig struct {
@@ -21,17 +20,7 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
-}
-
-type JWTConfig struct {
-	Secret          string
-	ExpirationHours int
+	Path string
 }
 
 type CORSConfig struct {
@@ -58,16 +47,7 @@ func LoadConfig() (*Config, error) {
 			Mode: getEnv("SERVER_MODE", "development"),
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnv("DB_PORT", "5432"),
-			User:     getEnv("DB_USER", "trpg_user"),
-			Password: getEnv("DB_PASSWORD", "trpg_password"),
-			DBName:   getEnv("DB_NAME", "trpg_sync"),
-			SSLMode:  getEnv("DB_SSLMODE", "disable"),
-		},
-		JWT: JWTConfig{
-			Secret:          getEnv("JWT_SECRET", "your-secret-key"),
-			ExpirationHours: getEnvInt("JWT_EXPIRATION_HOURS", 24),
+			Path: getEnv("DB_PATH", "./sqlite.db"),
 		},
 		CORS: CORSConfig{
 			AllowedOrigins: []string{
