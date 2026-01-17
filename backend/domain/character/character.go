@@ -1,37 +1,27 @@
 package character
 
-import (
-	"time"
-)
-
 type CharacterCard struct {
-	ID           uint      `gorm:"primaryKey"`
-	RoomID       uint      `gorm:"not null"`
-	Name         string    `gorm:"not null"`
-	Race         string
-	Class        string
-	Level        int       `gorm:"default:1"`
-	Background   string
-	Alignment    string
-	Strength     int       `gorm:"default:10"`
-	Dexterity    int       `gorm:"default:10"`
-	Constitution int       `gorm:"default:10"`
-	Intelligence int       `gorm:"default:10"`
-	Wisdom       int       `gorm:"default:10"`
-	Charisma     int       `gorm:"default:10"`
-	AC           int       `gorm:"default:10"`
-	HP           int       `gorm:"default:10"`
-	MaxHP        int       `gorm:"default:10"`
-	Speed        int       `gorm:"default:30"`
-	Proficiency  int       `gorm:"default:2"`
-	Skills       string    `gorm:"type:jsonb"`
-	Saves        string    `gorm:"type:jsonb"`
-	Equipment    string    `gorm:"type:jsonb"`
-	Spells       string    `gorm:"type:jsonb"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
-func (CharacterCard) TableName() string {
-	return "character_cards"
+	ID           uint      `json:"id"`
+	RoomID       uint      `json:"room_id"`
+	Name         string    `json:"name"`
+	Race         string    `json:"race"`
+	Class        string    `json:"class"`
+	Level        int       `json:"level"`
+	Background   string    `json:"background"`
+	Alignment    string    `json:"alignment"`
+	Strength     int       `json:"strength"`
+	Dexterity    int       `json:"dexterity"`
+	Constitution int       `json:"constitution"`
+	Intelligence int       `json:"intelligence"`
+	Wisdom       int       `json:"wisdom"`
+	Charisma     int       `json:"charisma"`
+	AC           int       `json:"ac"`
+	HP           int       `json:"hp"`
+	MaxHP        int       `json:"max_hp"`
+	Speed        int       `json:"speed"`
+	Proficiency  int       `json:"proficiency"`
+	Skills       string    `json:"skills"`
+	Saves        string    `json:"saves"`
+	Equipment    string    `json:"equipment"`
+	Spells       string    `json:"spells"`
 }

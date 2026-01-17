@@ -19,7 +19,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 			room.DELETE("/:id", roomHandler.DeleteRoom)
 		}
 
-		characterHandler := handlers.NewCharacterHandler(db)
+		characterHandler := handlers.NewCharacterHandler()
 		character := api.Group("/rooms/:roomId/characters")
 		{
 			character.POST("", characterHandler.CreateCharacter)

@@ -5,27 +5,61 @@
 ## 项目概述
 
 TRPG-Tools是一个轻量级的Web应用，专为个人使用设计：
-- 🏠 创建和管理多个游戏房间（用于分类不同战役）
-- 🎭 创建和编辑多规则系统的人物卡（目前支持D&D 5e）
-- 📊 便捷管理人物卡属性、技能、装备等信息
-- 💾 本地数据存储，无需网络同步
+|- 🏠 创建和管理多个游戏房间（用于分类不同战役）
+|- 🎭 创建和编辑多规则系统的人物卡（目前支持D&D 5e）
+|- 📊 便捷管理人物卡属性、技能、装备等信息
+|- 💾 混合存储方案（SQLite + JSON 文件）
+|- 📂 人物卡以 JSON 文件存储，易于备份和版本控制
 
 ## 技术栈
 
 ### 后端
-- **语言**: Go 1.24+
-- **Web框架**: Gin
-- **ORM**: GORM
-- **数据库**: SQLite（单机使用，无需外部数据库）
-- **测试**: Testify + go test
+|- **语言**: Go 1.24+
+|- **Web框架**: Gin
+|- **ORM**: GORM（仅用于 Room）
+|- **数据库**: SQLite（存储房间信息）
+|- **文件存储**: JSON 文件（存储人物卡）
+|- **测试**: Testify + go test
 
 ### 前端
-- **框架**: React 18
-- **语言**: TypeScript 5
-- **构建工具**: Vite
-- **状态管理**: Zustand
-- **UI组件**: Ant Design + TailwindCSS
-- **测试**: Vitest
+|- **框架**: React 18
+|- **语言**: TypeScript 5
+|- **构建工具**: Vite
+|- **状态管理**: Zustand
+|- **UI组件**: Ant Design + TailwindCSS
+|- **测试**: Vitest
+
+## 数据存储方案
+
+### 混合存储架构
+
+项目采用**混合存储方案**，结合关系型数据库和文件存储的优势：
+
+```
+data/
+  rooms/
+    {room_id}/
+      characters/
+        {character_id}.json    # 每个人物卡一个 JSON 文件
+```
+
+**SQLite 数据库**（`sqlite.db`）：
+- 存储房间信息（ID、名称、描述、规则系统）
+- 支持高效查询和索引
+- 零配置，自动创建
+
+**JSON 文件存储**：
+- 存储人物卡数据
+- 易于查看和编辑（文本格式）
+- 支持版本控制（git）
+- 易于备份和迁移
+
+**优势**：
+- ✅ 查询效率高（房间列表）
+- ✅ 数据可读性强（人物卡为 JSON）
+- ✅ 备份简单（复制 data 目录）
+- ✅ 版本控制友好（可用 git 管理人物卡）
+- ✅ 灵活性高（易于导出和导入）
 
 ## 快速开始
 
@@ -58,7 +92,7 @@ go run main.go
 make run
 ```
 
-后端服务将在 `http://localhost:8080` 启动，自动创建SQLite数据库文件
+后端服务将在 `http://localhost:8080` 启动，自动创建SQLite数据库文件和data目录
 
 ### 前端设置
 
@@ -85,9 +119,9 @@ npm run dev
 
 前端应用将在 `http://localhost:5173` 启动
 
-### 生产环境部署
+## 生产环境部署
 
-#### 后端部署
+### 后端部署
 
 1. **构建可执行文件**
 ```bash
@@ -98,10 +132,10 @@ go build -o trpg-tools main.go
 2. **运行服务**
 ```bash
 ./trpg-tools
-# 程序会自动在当前目录创建sqlite.db文件
 ```
+程序会自动在当前目录创建sqlite.db文件和data目录
 
-#### 前端部署
+### 前端部署
 
 1. **构建生产版本**
 ```bash
@@ -204,12 +238,11 @@ trpg-sync/
 │   │       └── routes.go  # 路由配置
 │   ├── domain/            # 领域层
 │   │   ├── character/     # 人物卡领域
-│   │   ├── room/         # 房间领域
-│   │   └── user/         # 用户领域
-│   ├── application/      # 应用层（预留）
+│   │   └── room/         # 房间领域
 │   ├── infrastructure/   # 基础设施层
 │   │   ├── config/      # 配置管理
-│   │   └── database/    # 数据库连接
+│   │   ├── database/    # 数据库连接
+│   │   └── storage/     # 文件存储
 │   ├── testutil/       # 测试工具
 │   └── main.go         # 应用入口
 ├── frontend/            # 前端代码
@@ -253,19 +286,12 @@ trpg-sync/
 - 类型定义使用接口（interface）
 - 使用ESLint进行代码检查
 
-### 数据库迁移
+### 数据存储规范
 
-项目使用GORM的AutoMigrate自动管理表结构。如需手动迁移：
-
-```go
-// 在main.go中添加
-db.AutoMigrate(
-    &user.User{},
-    &room.Room{},
-    &room.RoomMember{},
-    &character.CharacterCard{},
-)
-```
+- **房间数据**：存储在 SQLite `rooms` 表
+- **人物卡数据**：存储为 JSON 文件，路径 `data/rooms/{room_id}/characters/{character_id}.json`
+- **文件操作**：使用 `storage.CharacterStorage` 统一管理
+- **备份**：可以备份整个 `data/` 目录
 
 ## 环境变量
 
@@ -276,7 +302,7 @@ db.AutoMigrate(
 SERVER_PORT=8080
 
 # 数据库配置（使用SQLite，无需配置）
-# DB_PATH=./sqlite.db  # 可自定义数据库文件路径
+DB_PATH=./sqlite.db  # 可自定义数据库文件路径
 
 # 日志级别
 LOG_LEVEL=info
@@ -291,15 +317,9 @@ VITE_API_BASE_URL=http://localhost:8080/api/v1
 
 ## 常见问题
 
-### 数据库连接失败
-- 检查PostgreSQL服务是否运行
-- 验证数据库配置是否正确
-- 确保数据库已创建
-
-### JWT认证失败
-- 检查JWT_SECRET是否配置
-- 确保token未过期
-- 验证Authorization头格式：Bearer <token>
+### 数据连接失败
+- 确保data目录有读写权限
+- 验证SQLite数据库文件是否可写
 
 ### 前端无法连接后端
 - 检查后端服务是否运行
@@ -330,12 +350,21 @@ MIT License
 
 ## 更新日志
 
+### v0.3.0 (2026-01-17)
+- ✅ 采用混合存储方案（SQLite + JSON 文件）
+- ✅ 房间使用 SQLite 存储
+- ✅ 人物卡使用 JSON 文件存储
+- ✅ 添加文件导出和备份功能
+- ✅ 优化数据备份和版本控制
+
 ### v0.2.0 (2026-01-18)
 - ✅ 调整为个人工具定位
 - ✅ 移除用户系统和认证
 - ✅ 简化房间功能（仅分类用途）
 - ✅ 保留多规则系统支持
 - ✅ 本地SQLite数据存储
+- ✅ 添加房间搜索功能
+- ✅ 添加人物卡删除功能
 
 ### v0.1.0 (2026-01-17)
 - ✅ 基础架构搭建

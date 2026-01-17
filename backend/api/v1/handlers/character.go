@@ -4,17 +4,19 @@ import (
 	"net/http"
 	"strconv"
 	"trpg-sync/backend/domain/character"
+	"trpg-sync/backend/infrastructure/storage"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type CharacterHandler struct {
-	db *gorm.DB
+	storage *storage.CharacterStorage
 }
 
-func NewCharacterHandler(db *gorm.DB) *CharacterHandler {
-	return &CharacterHandler{db: db}
+func NewCharacterHandler() *CharacterHandler {
+	return &CharacterHandler{
+		storage: storage.NewCharacterStorage(),
+	}
 }
 
 type CreateCharacterRequest struct {
@@ -30,6 +32,15 @@ type CreateCharacterRequest struct {
 	Intelligence int    `json:"intelligence"`
 	Wisdom       int    `json:"wisdom"`
 	Charisma     int    `json:"charisma"`
+	AC           int    `json:"ac"`
+	HP           int    `json:"hp"`
+	MaxHP        int    `json:"max_hp"`
+	Speed        int    `json:"speed"`
+	Proficiency  int    `json:"proficiency"`
+	Skills       string `json:"skills"`
+	Saves        string `json:"saves"`
+	Equipment    string `json:"equipment"`
+	Spells       string `json:"spells"`
 }
 
 func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
@@ -54,7 +65,20 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 		return
 	}
 
-	newCharacter := character.CharacterCard{
+	// 生成新 ID
+	charID, err := h.storage.GenerateNextID(uint(roomID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    500,
+			"message": "Failed to generate character ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	// 创建人物卡
+	newCharacter := &character.CharacterCard{
+		ID:           charID,
 		RoomID:       uint(roomID),
 		Name:         req.Name,
 		Race:         req.Race,
@@ -68,9 +92,18 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 		Intelligence: req.Intelligence,
 		Wisdom:       req.Wisdom,
 		Charisma:     req.Charisma,
+		AC:           req.AC,
+		HP:           req.HP,
+		MaxHP:        req.MaxHP,
+		Speed:        req.Speed,
+		Proficiency:  req.Proficiency,
+		Skills:       req.Skills,
+		Saves:        req.Saves,
+		Equipment:    req.Equipment,
+		Spells:       req.Spells,
 	}
 
-	if err := h.db.Create(&newCharacter).Error; err != nil {
+	if err := h.storage.SaveCharacter(newCharacter); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    500,
 			"message": "Failed to create character",
@@ -87,10 +120,19 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 }
 
 func (h *CharacterHandler) GetCharacters(c *gin.Context) {
-	roomID := c.Param("roomId")
+	roomIDStr := c.Param("roomId")
+	roomID, err := strconv.ParseUint(roomIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid room ID",
+			"data":    nil,
+		})
+		return
+	}
 
-	var characters []character.CharacterCard
-	if err := h.db.Where("room_id = ?", roomID).Find(&characters).Error; err != nil {
+	characters, err := h.storage.GetRoomCharacters(uint(roomID))
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    500,
 			"message": "Failed to get characters",
@@ -107,10 +149,30 @@ func (h *CharacterHandler) GetCharacters(c *gin.Context) {
 }
 
 func (h *CharacterHandler) GetCharacter(c *gin.Context) {
-	characterID := c.Param("id")
+	roomIDStr := c.Param("roomId")
+	roomID, err := strconv.ParseUint(roomIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid room ID",
+			"data":    nil,
+		})
+		return
+	}
 
-	var character character.CharacterCard
-	if err := h.db.First(&character, characterID).Error; err != nil {
+	characterIDStr := c.Param("id")
+	characterID, err := strconv.ParseUint(characterIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid character ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	char, err := h.storage.LoadCharacter(uint(roomID), uint(characterID))
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"code":    404,
 			"message": "Character not found",
@@ -122,15 +184,36 @@ func (h *CharacterHandler) GetCharacter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code":    200,
 		"message": "Success",
-		"data":    character,
+		"data":    char,
 	})
 }
 
 func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
-	characterIDStr := c.Param("id")
+	roomIDStr := c.Param("roomId")
+	roomID, err := strconv.ParseUint(roomIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid room ID",
+			"data":    nil,
+		})
+		return
+	}
 
-	var targetCharacter character.CharacterCard
-	if err := h.db.First(&targetCharacter, characterIDStr).Error; err != nil {
+	characterIDStr := c.Param("id")
+	characterID, err := strconv.ParseUint(characterIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid character ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	// 加载现有人物卡
+	targetCharacter, err := h.storage.LoadCharacter(uint(roomID), uint(characterID))
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"code":    404,
 			"message": "Character not found",
@@ -149,6 +232,7 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 		return
 	}
 
+	// 更新字段
 	targetCharacter.Name = req.Name
 	targetCharacter.Race = req.Race
 	targetCharacter.Class = req.Class
@@ -161,8 +245,17 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 	targetCharacter.Intelligence = req.Intelligence
 	targetCharacter.Wisdom = req.Wisdom
 	targetCharacter.Charisma = req.Charisma
+	targetCharacter.AC = req.AC
+	targetCharacter.HP = req.HP
+	targetCharacter.MaxHP = req.MaxHP
+	targetCharacter.Speed = req.Speed
+	targetCharacter.Proficiency = req.Proficiency
+	targetCharacter.Skills = req.Skills
+	targetCharacter.Saves = req.Saves
+	targetCharacter.Equipment = req.Equipment
+	targetCharacter.Spells = req.Spells
 
-	if err := h.db.Save(&targetCharacter).Error; err != nil {
+	if err := h.storage.SaveCharacter(targetCharacter); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    500,
 			"message": "Failed to update character",
@@ -179,19 +272,29 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 }
 
 func (h *CharacterHandler) DeleteCharacter(c *gin.Context) {
-	characterIDStr := c.Param("id")
-
-	var targetCharacter character.CharacterCard
-	if err := h.db.First(&targetCharacter, characterIDStr).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"code":    404,
-			"message": "Character not found",
+	roomIDStr := c.Param("roomId")
+	roomID, err := strconv.ParseUint(roomIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid room ID",
 			"data":    nil,
 		})
 		return
 	}
 
-	if err := h.db.Delete(&targetCharacter).Error; err != nil {
+	characterIDStr := c.Param("id")
+	characterID, err := strconv.ParseUint(characterIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid character ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	if err := h.storage.DeleteCharacter(uint(roomID), uint(characterID)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    500,
 			"message": "Failed to delete character",
