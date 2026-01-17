@@ -7,8 +7,8 @@ import (
 
 	"trpg-sync/backend/domain/user"
 	"trpg-sync/backend/testutil"
+	"golang.org/x/crypto/bcrypt"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -133,11 +133,11 @@ func TestAuthHandler_Login(t *testing.T) {
 	router := testutil.SetupTestRouter()
 	router.POST("/auth/login", handler.Login)
 
-	// 创建测试用户
-	hashedPassword := "$2a$10$N9qo8uLOickgx2ZMRZoMy.MrqJq4v4v4v4v4v4v4v4v4v4v4v4v4" // "password123" bcrypt hash
+	// 创建测试用户（使用正确的bcrypt哈希）
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	testUser := user.User{
 		Email:    "test@example.com",
-		Password: hashedPassword,
+		Password: string(hashedPassword),
 		Nickname: "Test User",
 	}
 	db.Create(&testUser)
@@ -156,7 +156,6 @@ func TestAuthHandler_Login(t *testing.T) {
 			}`,
 			expectedStatus: 200,
 		},
-	}
 		{
 			name: "成功登录",
 			requestBody: `{

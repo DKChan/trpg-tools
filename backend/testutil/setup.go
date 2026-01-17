@@ -3,7 +3,7 @@ package testutil
 import (
 	"testing"
 
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -32,6 +32,7 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 // CleanupTestDB 清理测试数据
 func CleanupTestDB(db *gorm.DB, tables []interface{}) error {
 	for _, table := range tables {
+		_ = table
 		if err := db.Exec("DELETE FROM " + db.Statement.Table).Error; err != nil {
 			return err
 		}

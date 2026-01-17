@@ -38,6 +38,14 @@ export const roomService = {
   leaveRoom: (id: number) => api.post<ApiResponse<null>>(`/rooms/${id}/leave`),
 
   deleteRoom: (id: number) => api.delete<ApiResponse<null>>(`/rooms/${id}`),
+
+  getRoomMembers: (id: number) => api.get<ApiResponse<any[]>>(`/rooms/${id}/members`),
+
+  kickMember: (id: number, userId: number) =>
+    api.put<ApiResponse<null>>(`/rooms/${id}/members/${userId}/kick`),
+
+  transferDM: (id: number, userId: number) =>
+    api.put<ApiResponse<null>>(`/rooms/${id}/transfer-dm`, { user_id: userId }),
 }
 
 export const characterService = {

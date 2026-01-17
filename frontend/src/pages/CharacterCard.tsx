@@ -1,23 +1,65 @@
-import { useState } from 'react'
-import { Card, Form, Input, InputNumber, Button, message } from 'antd'
+import { useState, useEffect } from 'react'
+import { Card, Form, Input, InputNumber, Button, message, Spin } from 'antd'
 import { SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
+import { characterService } from '../services'
 
 function CharacterCard() {
   const navigate = useNavigate()
   const { roomId, id } = useParams()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
+  const [character, setCharacter] = useState<any>(null)
+
+  useEffect(() => {
+    if (id && id !== 'new') {
+      fetchCharacter()
+    }
+  }, [id, roomId])
+
+  const fetchCharacter = async () => {
+    try {
+      setLoading(true)
+      const response = await characterService.getCharacter(Number(roomId), Number(id))
+      if (response.data.code === 200) {
+        const data = response.data.data
+        setCharacter(data)
+        form.setFieldsValue(data)
+      } else {
+        message.error('获取人物卡失败')
+      }
+    } catch (error) {
+      message.error('获取人物卡失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSave = async (values: any) => {
     setLoading(true)
     try {
-      message.success('保存成功')
+      let response
+      if (id === 'new') {
+        response = await characterService.createCharacter(Number(roomId), values)
+      } else {
+        response = await characterService.updateCharacter(Number(roomId), Number(id), values)
+      }
+
+      if (response.data.code === 200) {
+        message.success('保存成功')
+        navigate(`/rooms/${roomId}`)
+      } else {
+        message.error('保存失败')
+      }
     } catch (error) {
       message.error('保存失败')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (loading && id !== 'new') {
+    return <Spin size="large" className="flex justify-center items-center h-64" />
   }
 
   return (

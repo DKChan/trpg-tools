@@ -3,6 +3,7 @@ package testutil
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )

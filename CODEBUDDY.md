@@ -80,12 +80,11 @@ backend/
 │   ├── config/      # 配置管理
 │   ├── database/    # 数据库连接 (InitDB)
 │   └── utils/       # 工具函数（待实现）
-├── models/          # 数据模型（备用，实际使用 domain/ 中的结构体）
 └── main.go          # 应用入口
 ```
 
 **核心设计原则**：
-- **依赖方向**: infrastructure → application → domain（domain层不依赖任何外层）
+- **依赖方向**: application → domain; infrastructure → domain（domain层不依赖任何外层）
 - **实体定义**: 领域实体在 `domain/*/` 包中，使用 GORM 标签
 - **API层**: handlers 通过 GORM DB 直接操作实体（当前实现），后续应引入 repository 模式
 - **中间件链**: CORS → Logger → Recovery → Auth（按需）

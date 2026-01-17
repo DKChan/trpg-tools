@@ -66,7 +66,60 @@ backend/
 - 每个表必须包含`id`、`created_at`、`updated_at`字段
 - 外键约束明确
 
-### 2.6 代码查找规范
+### 2.6 测试规范
+- **测试框架**：Go 标准库 `testing` + `testify` 断言库
+- **测试工具**：
+  - 单元测试：`testify/assert`, `testify/suite`
+  - HTTP 测试：`testutil/http.go` 自定义工具
+  - Mock 生成：`testutil/mock.go` Mock 工具
+  - 数据库测试：`testutil/setup.go` 测试数据库初始化
+- **测试覆盖率**：总体覆盖率必须 > 70%
+- **测试类型**：
+  - **单元测试**：测试单个函数/方法，使用 Mock 隔离依赖
+  - **集成测试**：测试组件间协作，使用测试数据库
+  - **HTTP 测试**：测试 API 端点，验证请求/响应
+- **测试组织**：
+  - 测试文件命名：`xxx_test.go`（与源文件同目录）
+  - 测试函数命名：`Test<FunctionName>` 或 `Test<FeatureName>_<Scenario>`
+  - 表格驱动测试：使用子测试 `t.Run()` 组织多场景测试
+  - 测试数据：在 `testdata/` 目录存放测试数据文件
+- **测试规范**：
+  - 每个公开函数必须有对应的单元测试
+  - API handler 必须有 HTTP 测试
+  - 使用 `t.Cleanup()` 确保测试资源清理
+  - 数据库测试使用测试数据库，不影响生产数据
+  - 并发安全测试使用 `go test -race` 检测
+- **测试示例**：
+  ```go
+  func TestLogin_Success(t *testing.T) {
+      // Given
+      req := LoginRequest{Email: "test@example.com", Password: "password"}
+      
+      // When
+      result, err := Login(req)
+      
+      // Then
+      assert.NoError(t, err)
+      assert.NotNil(t, result)
+      assert.Equal(t, "expected_value", result.Token)
+  }
+  ```
+- **运行测试**：
+  ```bash
+  # 运行所有测试
+  go test ./...
+  
+  # 运行带覆盖率的测试
+  go test -coverprofile=coverage.out ./...
+  
+  # 查看覆盖率详情
+  go tool cover -html=coverage.out
+  
+  # 运行竞态检测
+  go test -race ./...
+  ```
+
+### 2.7 代码查找规范
 - **优先使用 MCP serena 工具进行符号查找**：
   - 查找函数/类/变量定义：使用 `find_symbol` 工具
   - 查找符号引用：使用 `find_referencing_symbols` 工具

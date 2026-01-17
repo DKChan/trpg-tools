@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"trpg-sync/backend/domain/user"
 	"trpg-sync/backend/testutil"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -57,12 +57,11 @@ func TestUserHandler_GetProfile(t *testing.T) {
 			req := httptest.NewRequest("GET", "/user/profile", nil)
 			rec := httptest.NewRecorder()
 
-			c := gin.Context{}
-			c.Set("user_id", tt.userID)
+			c, _ := gin.CreateTestContext(rec)
 			c.Request = req
-			c.Writer = rec
+			c.Set("user_id", tt.userID)
 
-			handler.GetProfile(&c)
+			handler.GetProfile(c)
 
 			assert.Equal(t, tt.expectedStatus, rec.Code)
 
@@ -168,10 +167,11 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 
 	handler := NewUserHandler(db)
 
-	// 创建测试用户
+	// 创建测试用户，使用bcrypt哈希密码
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("oldpassword"), bcrypt.DefaultCost)
 	testUser := user.User{
 		Email:    "test@example.com",
-		Password: "oldhashedpassword",
+		Password: string(hashedPassword),
 		Nickname: "Test User",
 	}
 	db.Create(&testUser)

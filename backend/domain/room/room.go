@@ -13,7 +13,7 @@ type Room struct {
 	InviteCode  string    `gorm:"uniqueIndex;not null"`
 	DMID        uint      `gorm:"not null"`
 	MaxPlayers  int       `gorm:"not null;default:10"`
-	IsPublic    bool      `gorm:"not null;default:true"`
+	IsPublic    bool      `gorm:"not null"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }

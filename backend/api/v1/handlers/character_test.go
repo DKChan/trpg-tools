@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"trpg-sync/backend/domain/character"
+	"trpg-sync/backend/domain/room"
 	"trpg-sync/backend/testutil"
 
 	"github.com/gin-gonic/gin"
@@ -20,9 +21,29 @@ func TestCharacterHandler_CreateCharacter(t *testing.T) {
 		sqlDB.Close()
 	}()
 
-	db.AutoMigrate(&character.CharacterCard{})
+	// 自动迁移所有相关表
+	db.AutoMigrate(&character.CharacterCard{}, &room.Room{}, &room.RoomMember{})
 
 	handler := NewCharacterHandler(db)
+
+	// 创建测试房间和成员
+	testRoom := room.Room{
+		Name:       "Test Room",
+		InviteCode: "TEST123",
+		DMID:       1,
+		MaxPlayers: 10,
+		IsPublic:   true,
+	}
+	db.Create(&testRoom)
+
+	// 创建测试成员
+	testMember := room.RoomMember{
+		RoomID:   testRoom.ID,
+		UserID:   1,
+		Role:     "dm",
+		JoinedAt: time.Now(),
+	}
+	db.Create(&testMember)
 
 	tests := []struct {
 		name           string
@@ -76,8 +97,8 @@ func TestCharacterHandler_CreateCharacter(t *testing.T) {
 
 			c, _ := gin.CreateTestContext(rec)
 			c.Request = req
+			c.Params = gin.Params{{Key: "roomId", Value: "1"}}
 			c.Set("user_id", tt.userID)
-			c.Set("room_id", uint(1))
 
 			handler.CreateCharacter(c)
 
@@ -188,21 +209,57 @@ func TestCharacterHandler_UpdateCharacter(t *testing.T) {
 		sqlDB.Close()
 	}()
 
-	db.AutoMigrate(&character.CharacterCard{})
+	// 自动迁移所有相关表
+	db.AutoMigrate(&character.CharacterCard{}, &room.Room{}, &room.RoomMember{})
 
 	handler := NewCharacterHandler(db)
 
-	req := httptest.NewRequest("PUT", "/rooms/1/characters/1", nil)
+	// 创建测试房间和成员
+	testRoom := room.Room{
+		Name:       "Test Room",
+		InviteCode: "TEST123",
+		DMID:       1,
+		MaxPlayers: 10,
+		IsPublic:   true,
+	}
+	db.Create(&testRoom)
+
+	testMember := room.RoomMember{
+		RoomID:   testRoom.ID,
+		UserID:   1,
+		Role:     "dm",
+		JoinedAt: time.Now(),
+	}
+	db.Create(&testMember)
+
+	// 创建测试人物卡
+	testCharacter := character.CharacterCard{
+		UserID: 1,
+		RoomID: testRoom.ID,
+		Name:   "Test Character",
+		Level:  1,
+	}
+	db.Create(&testCharacter)
+
+	reqBody := `{
+		"name": "Updated Character",
+		"race": "Elf",
+		"class": "Wizard",
+		"level": 2
+	}`
+	req := httptest.NewRequest("PUT", "/rooms/1/characters/1", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = req
-	c.Set("character_id", uint(1))
+	c.Params = gin.Params{{Key: "roomId", Value: "1"}, {Key: "id", Value: "1"}}
+	c.Set("user_id", uint(1))
 
 	handler.UpdateCharacter(c)
 
-	// 当前实现只返回 200，未实际更新人物卡
 	assert.Equal(t, 200, rec.Code)
+	assert.Contains(t, rec.Body.String(), "Updated Character")
 }
 
 func TestCharacterHandler_DeleteCharacter(t *testing.T) {
@@ -212,19 +269,47 @@ func TestCharacterHandler_DeleteCharacter(t *testing.T) {
 		sqlDB.Close()
 	}()
 
-	db.AutoMigrate(&character.CharacterCard{})
+	// 自动迁移所有相关表
+	db.AutoMigrate(&character.CharacterCard{}, &room.Room{}, &room.RoomMember{})
 
 	handler := NewCharacterHandler(db)
+
+	// 创建测试房间和成员
+	testRoom := room.Room{
+		Name:       "Test Room",
+		InviteCode: "TEST123",
+		DMID:       1,
+		MaxPlayers: 10,
+		IsPublic:   true,
+	}
+	db.Create(&testRoom)
+
+	testMember := room.RoomMember{
+		RoomID:   testRoom.ID,
+		UserID:   1,
+		Role:     "dm",
+		JoinedAt: time.Now(),
+	}
+	db.Create(&testMember)
+
+	// 创建测试人物卡
+	testCharacter := character.CharacterCard{
+		UserID: 1,
+		RoomID: testRoom.ID,
+		Name:   "Test Character",
+		Level:  1,
+	}
+	db.Create(&testCharacter)
 
 	req := httptest.NewRequest("DELETE", "/rooms/1/characters/1", nil)
 	rec := httptest.NewRecorder()
 
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = req
-	c.Set("character_id", uint(1))
+	c.Params = gin.Params{{Key: "roomId", Value: "1"}, {Key: "id", Value: "1"}}
+	c.Set("user_id", uint(1))
 
 	handler.DeleteCharacter(c)
 
-	// 当前实现只返回 200，未实际删除人物卡
 	assert.Equal(t, 200, rec.Code)
 }

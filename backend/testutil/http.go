@@ -1,10 +1,10 @@
 package testutil
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,7 +22,7 @@ func MakeJSONRequest(method, url string, body interface{}) (*http.Request, error
 		return nil, err
 	}
 
-	req := httptest.NewRequest(method, url, jsonBody)
+	req := httptest.NewRequest(method, url, bytes.NewReader(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 	return req, nil
 }
