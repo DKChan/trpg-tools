@@ -7,6 +7,7 @@ import { roomService } from '../services'
 function Home() {
   const navigate = useNavigate()
   const [rooms, setRooms] = useState<any[]>([])
+  const [filteredRooms, setFilteredRooms] = useState<any[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
@@ -21,11 +22,25 @@ function Home() {
       const response = await roomService.getRooms()
       if (response.data.code === 200) {
         setRooms(response.data.data)
+        setFilteredRooms(response.data.data)
       }
     } catch (error) {
       message.error('获取房间列表失败')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    if (!value) {
+      setFilteredRooms(rooms)
+    } else {
+      const filtered = rooms.filter((room) =>
+        room.name.toLowerCase().includes(value.toLowerCase()) ||
+        (room.description && room.description.toLowerCase().includes(value.toLowerCase()))
+      )
+      setFilteredRooms(filtered)
     }
   }
 
@@ -64,10 +79,12 @@ function Home() {
         placeholder="搜索房间"
         prefix={<SearchOutlined />}
         className="mb-6 max-w-md"
+        onChange={handleSearch}
+        allowClear
       />
 
       <Row gutter={[16, 16]}>
-        {rooms.map((room) => (
+        {filteredRooms.map((room) => (
           <Col xs={24} sm={12} md={8} lg={6} key={room.id}>
             <Card
               title={room.name}

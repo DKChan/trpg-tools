@@ -1,5 +1,5 @@
-import { Card, Descriptions, Button, message, Spin } from 'antd'
-import { ArrowLeftOutlined } from '@ant-design/icons'
+import { Card, Descriptions, Button, message, Spin, Popconfirm } from 'antd'
+import { ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { roomService, characterService } from '../services'
@@ -41,6 +41,20 @@ function RoomDetail() {
       message.error('获取人物卡失败')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteCharacter = async (characterId: number) => {
+    try {
+      const response = await characterService.deleteCharacter(Number(id), characterId)
+      if (response.data.code === 200) {
+        message.success('人物卡已删除')
+        fetchCharacters()
+      } else {
+        message.error('删除人物卡失败')
+      }
+    } catch (error) {
+      message.error('删除人物卡失败')
     }
   }
 
@@ -109,6 +123,21 @@ function RoomDetail() {
                 key={char.id}
                 hoverable
                 onClick={() => navigate(`/rooms/${id}/characters/${char.id}`)}
+                extra={
+                  <Popconfirm
+                    title="确认删除"
+                    description="确定要删除这个人物卡吗？"
+                    onConfirm={() => handleDeleteCharacter(char.id)}
+                    okText="确定"
+                    cancelText="取消"
+                  >
+                    <Button
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </Popconfirm>
+                }
               >
                 <h3 className="font-bold mb-2">{char.name}</h3>
                 <div className="text-sm text-gray-600">
