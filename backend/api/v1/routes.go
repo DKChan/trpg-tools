@@ -9,24 +9,19 @@ import (
 
 func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	api := r.Group("/api/v1")
-	{
-		roomHandler := handlers.NewRoomHandler(db)
-		room := api.Group("/rooms")
-		{
-			room.POST("", roomHandler.CreateRoom)
-			room.GET("", roomHandler.GetRooms)
-			room.GET("/:id", roomHandler.GetRoom)
-			room.DELETE("/:id", roomHandler.DeleteRoom)
-		}
 
-		characterHandler := handlers.NewCharacterHandler()
-		character := api.Group("/rooms/:roomId/characters")
-		{
-			character.POST("", characterHandler.CreateCharacter)
-			character.GET("", characterHandler.GetCharacters)
-			character.GET("/:id", characterHandler.GetCharacter)
-			character.PUT("/:id", characterHandler.UpdateCharacter)
-			character.DELETE("/:id", characterHandler.DeleteCharacter)
-		}
-	}
+	// 房间路由
+	roomHandler := handlers.NewRoomHandler(db)
+	api.POST("/rooms", roomHandler.CreateRoom)
+	api.GET("/rooms", roomHandler.GetRooms)
+	api.GET("/rooms/:id", roomHandler.GetRoom)
+	api.DELETE("/rooms/:id", roomHandler.DeleteRoom)
+
+	// 人物卡路由 - 使用独立路径避免Gin路由冲突
+	characterHandler := handlers.NewCharacterHandler()
+	api.POST("/characters/:roomId", characterHandler.CreateCharacter)
+	api.GET("/characters/:roomId", characterHandler.GetCharacters)
+	api.GET("/characters/:roomId/:charId", characterHandler.GetCharacter)
+	api.PUT("/characters/:roomId/:charId", characterHandler.UpdateCharacter)
+	api.DELETE("/characters/:roomId/:charId", characterHandler.DeleteCharacter)
 }

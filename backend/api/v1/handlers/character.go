@@ -160,7 +160,7 @@ func (h *CharacterHandler) GetCharacter(c *gin.Context) {
 		return
 	}
 
-	characterIDStr := c.Param("id")
+	characterIDStr := c.Param("charId")
 	characterID, err := strconv.ParseUint(characterIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -200,7 +200,7 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 		return
 	}
 
-	characterIDStr := c.Param("id")
+	characterIDStr := c.Param("charId")
 	characterID, err := strconv.ParseUint(characterIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -283,7 +283,7 @@ func (h *CharacterHandler) DeleteCharacter(c *gin.Context) {
 		return
 	}
 
-	characterIDStr := c.Param("id")
+	characterIDStr := c.Param("charId")
 	characterID, err := strconv.ParseUint(characterIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

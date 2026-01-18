@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Card, Row, Col, Button, Input, Modal, Form, message, Spin } from 'antd'
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Button, Input, Modal, Form, message, Spin, Popconfirm } from 'antd'
+import { PlusOutlined, SearchOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { roomService } from '../services'
 
@@ -9,7 +9,11 @@ function Home() {
   const [rooms, setRooms] = useState<any[]>([])
   const [filteredRooms, setFilteredRooms] = useState<any[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{id: number; name: string} | null>(null)
+  const [deleteConfirmName, setDeleteConfirmName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -58,6 +62,35 @@ function Home() {
     }
   }
 
+  const handleDeleteRoom = async () => {
+    if (!deleteTarget) return
+
+    setDeleting(true)
+    try {
+      const response = await roomService.deleteRoom(deleteTarget.id)
+      if (response.data.code === 200) {
+        message.success('房间删除成功')
+        setDeleteModalOpen(false)
+        setDeleteTarget(null)
+        setDeleteConfirmName('')
+        fetchRooms()
+      } else {
+        message.error('房间删除失败')
+      }
+    } catch (error) {
+      message.error('房间删除失败')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const openDeleteModal = (room: any, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDeleteTarget({ id: room.id, name: room.name })
+    setDeleteConfirmName('')
+    setDeleteModalOpen(true)
+  }
+
   if (loading) {
     return <Spin size="large" className="flex justify-center items-center h-64" />
   }
@@ -88,7 +121,18 @@ function Home() {
           <Col xs={24} sm={12} md={8} lg={6} key={room.id}>
             <Card
               title={room.name}
-              extra={<span className="text-sm text-gray-500">{room.rule_system}</span>}
+              extra={
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">{room.rule_system}</span>
+                  <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                    size="small"
+                    onClick={(e) => openDeleteModal(room, e)}
+                  />
+                </div>
+              }
               hoverable
               className="h-full"
               onClick={() => navigate(`/rooms/${room.id}`)}
@@ -128,6 +172,34 @@ function Home() {
             </Button>
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="删除房间"
+        open={deleteModalOpen}
+        onCancel={() => setDeleteModalOpen(false)}
+        onOk={handleDeleteRoom}
+        okText="确认删除"
+        cancelText="取消"
+        okButtonProps={{ disabled: deleteConfirmName !== deleteTarget?.name, loading: deleting }}
+        width={520}
+      >
+        <div className="space-y-4">
+          <p className="text-red-500">
+            警告：此操作无法撤销。请谨慎操作。
+          </p>
+          <div>
+            <p className="mb-2">
+              输入 <strong className="text-red-600">{deleteTarget?.name}</strong> 以确认删除
+            </p>
+            <Input
+              placeholder={`请输入房间名称: ${deleteTarget?.name}`}
+              value={deleteConfirmName}
+              onChange={(e) => setDeleteConfirmName(e.target.value)}
+              autoFocus
+            />
+          </div>
+        </div>
       </Modal>
     </div>
   )

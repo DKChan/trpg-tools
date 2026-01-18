@@ -86,7 +86,7 @@ func (s *CharacterStorage) DeleteCharacter(roomID uint, characterID uint) error 
 }
 
 // GetRoomCharacters 获取房间的所有人物卡
-func (s *CharacterStorage) GetRoomCharacters(roomID uint) ([]*character.CharacterCard, error) {
+func (s *CharacterStorage) GetRoomCharacters(roomID uint) ([]character.CharacterCard, error) {
 	charDir := s.GetRoomCharactersPath(roomID)
 
 	// 读取目录内容
@@ -94,12 +94,12 @@ func (s *CharacterStorage) GetRoomCharacters(roomID uint) ([]*character.Characte
 	if err != nil {
 		if os.IsNotExist(err) {
 			// 目录不存在，返回空列表
-			return []*character.CharacterCard{}, nil
+			return []character.CharacterCard{}, nil
 		}
 		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
 
-	var characters []*character.CharacterCard
+	var characters []character.CharacterCard
 
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -120,7 +120,7 @@ func (s *CharacterStorage) GetRoomCharacters(roomID uint) ([]*character.Characte
 			return nil, fmt.Errorf("failed to load character %s: %w", fileName, err)
 		}
 
-		characters = append(characters, char)
+		characters = append(characters, *char)
 	}
 
 	return characters, nil
@@ -141,7 +141,7 @@ func (s *CharacterStorage) GenerateNextID(roomID uint) (uint, error) {
 		return 0, fmt.Errorf("failed to read directory: %w", err)
 	}
 
-	maxID := uint(0)
+	maxID := uint64(0)
 
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -152,11 +152,11 @@ func (s *CharacterStorage) GenerateNextID(roomID uint) (uint, error) {
 		fileName := entry.Name()
 		charID, err := strconv.ParseUint(fileName[:len(fileName)-5], 10, 64)
 		if err == nil && charID > maxID {
-			maxID = uint(charID)
+			maxID = charID
 		}
 	}
 
-	return maxID + 1, nil
+	return uint(maxID + 1), nil
 }
 
 // ExportCharacterToFile 导出人物卡到指定路径

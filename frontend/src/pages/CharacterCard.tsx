@@ -9,7 +9,6 @@ function CharacterCard() {
   const { roomId, id } = useParams()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const [character, setCharacter] = useState<any>(null)
 
   useEffect(() => {
     if (id && id !== 'new') {
@@ -23,7 +22,6 @@ function CharacterCard() {
       const response = await characterService.getCharacter(Number(roomId), Number(id))
       if (response.data.code === 200) {
         const data = response.data.data
-        setCharacter(data)
         form.setFieldsValue(data)
       } else {
         message.error('获取人物卡失败')

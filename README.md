@@ -68,86 +68,112 @@ data/
 - Go 1.24 或更高版本
 - Node.js 18+ 和 npm
 
-### 后端设置
+### 一键部署（推荐）
 
-1. **克隆仓库**
-```bash
-git clone https://github.com/DKChan/trpg-tools.git
-cd trpg-tools/backend
+**Windows:**
+```powershell
+.\build.ps1
+cd backend
+.\trpg-tools.exe
 ```
 
-2. **安装依赖**
+**Linux/Mac:**
 ```bash
-# 使用 go mod 安装Go依赖
-go mod tidy
-go mod download
+./build.sh
+cd backend
+./trpg-tools
 ```
 
-3. **启动后端服务**
+应用将在 `http://localhost:8080` 启动，所有功能都已集成！
+
+### 开发模式
+
+如需开发调试，可以分别启动前后端：
+
+**后端:**
 ```bash
-# 开发模式
+cd backend
 go run main.go
-
-# 或使用Makefile
-make run
+# 服务在 http://localhost:8080
 ```
 
-后端服务将在 `http://localhost:8080` 启动，自动创建SQLite数据库文件和data目录
-
-### 前端设置
-
-1. **进入前端目录**
+**前端:**
 ```bash
-cd trpg-sync/frontend
-```
-
-2. **安装依赖**
-```bash
-npm install
-```
-
-3. **配置API地址** (可选)
-```bash
-# 前端默认使用代理到后端
-# 如需修改，编辑 vite.config.ts
-```
-
-4. **启动开发服务器**
-```bash
+cd frontend
 npm run dev
+# 服务在 http://localhost:5173
 ```
 
-前端应用将在 `http://localhost:5173` 启动
+详细的部署说明请查看 [DEPLOY.md](DEPLOY.md)
 
 ## 生产环境部署
 
-### 后端部署
+### 一键构建（推荐）
 
-1. **构建可执行文件**
+使用一键构建脚本，自动完成前端和后端的构建：
+
+**Windows:**
+```powershell
+.\build.ps1
+```
+
+**Linux/Mac:**
+```bash
+./build.sh
+```
+
+构建完成后，只需运行一个可执行文件：
+
 ```bash
 cd backend
+# Windows
+trpg-tools.exe
+# Linux/Mac
+./trpg-tools
+```
+
+服务启动后访问: http://localhost:8080
+
+### 手动部署
+
+如果需要手动构建：
+
+1. **构建前端**
+```bash
+cd frontend
+npm install
+npm run build
+# 前端产物自动嵌入到backend/dist目录
+```
+
+2. **构建后端**
+```bash
+cd backend
+go mod tidy
 go build -o trpg-tools main.go
 ```
 
-2. **运行服务**
+3. **运行服务**
 ```bash
 ./trpg-tools
 ```
-程序会自动在当前目录创建sqlite.db文件和data目录
 
-### 前端部署
+### 部署架构
 
-1. **构建生产版本**
-```bash
-cd frontend
-npm run build
-```
+项目使用 **Go Embed** 技术，将前端静态资源嵌入到Go二进制文件中：
 
-2. **部署到Web服务器**
-```bash
-# 构建产物在 dist/ 目录
-# 可以部署到Nginx、Apache或静态托管服务
-```
+- ✅ **单一可执行文件**: 只需部署一个二进制文件
+- ✅ **一键启动**: 无需额外配置Web服务器
+- ✅ **包含前端**: 所有静态资源已打包
+- ✅ **端口统一**: 前后端共享同一个端口(默认8080)
+- ✅ **自动路由**: API路由 `/api/*` 和前端路由自动分离
+
+### 运行时生成的文件
+
+程序运行时会自动创建：
+
+- `sqlite.db`: SQLite数据库文件（存储房间信息）
+- `data/`: 数据目录（存储人物卡JSON文件）
 
 ## 依赖管理
 
@@ -349,6 +375,13 @@ MIT License
 - 问题反馈: https://github.com/DKChan/trpg-tools/issues
 
 ## 更新日志
+
+### v0.4.0 (2026-01-18)
+- ✅ 实现一键部署（Go Embed 技术）
+- ✅ 前端静态资源嵌入到Go二进制文件
+- ✅ 单一可执行文件，无需额外Web服务器
+- ✅ 添加一键构建脚本（Windows/Linux/Mac）
+- ✅ 统一前后端端口，简化部署
 
 ### v0.3.0 (2026-01-17)
 - ✅ 采用混合存储方案（SQLite + JSON 文件）

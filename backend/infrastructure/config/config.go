@@ -37,9 +37,8 @@ func LoadConfig() (*Config, error) {
 	viper.SetConfigType("env")
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
-	}
+	// 尝试读取配置文件，如果不存在则使用默认值
+	_ = viper.ReadInConfig()
 
 	cfg := &Config{
 		Server: ServerConfig{
